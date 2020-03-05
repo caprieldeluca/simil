@@ -38,7 +38,7 @@ Per point weights can be used.
 
 The solution can be forced to mirror and/or to fixed scale.
 
-If a check fail, the function print an error, and return zeroes
+If a check fails, the function prints an error, and returns zeroes
 filled variables.  
 A program may evaluate the `lambda_i` value returned to raise an
 exception if it is equal to zero.
