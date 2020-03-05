@@ -168,7 +168,7 @@ Done.
 
 ## Process function help
 
-```python
+```
 >>> help(simil.process)
 Help on function process in module simil:
 
