@@ -38,7 +38,7 @@ Per point weights can be used.
 
 The solution can be forced to mirror and/or to fixed scale.
 
-If a check fail, the function prints an error, and return zeroes
+If a check fail, the function print an error, and return zeroes
 filled variables.  
 A program may evaluate the `lambda_i` value returned to raise an
 exception if it is equal to zero.
@@ -165,3 +165,48 @@ Done.
 ```
 
 ----  
+
+## Process function help
+
+```
+>>> help(simil.process)
+Help on function process in module simil:
+
+process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1)
+    Find similarity transformation parameters given a set of control points
+
+    Parameters
+    ----------
+    source_points : array_like
+        The function will try to cast it to a numpy array with shape:
+        ``(n, 3)``, where ``n`` is the number of points.
+        Two points is the minimum requeriment. The solution will map
+        well all points that belong in the rect that passes trought
+        both control points.
+    target_points : array_like
+        The function will try to cast it to a numpy array with shape:
+        ``(n, 3)``, where ``n`` is the number of points.
+        The function will check that there are as many target points
+        as source points.
+    alpha_0 : array_like, optional
+        Per point weights.
+        The function will try to cast it to a numpy array with shape:
+        ``(1, n)``.
+    scale : boolean, optional
+        Allow to find a multiplier factor different from lambda_0.
+        Default is True.
+    lambda_0 : , optional
+        Multiplier factor to find the first solution. Default is 1.
+        If `scale=True`, a recursion is implemented to find a better
+        value. If it is negative, forces mirroring. Can't be zero.
+
+    Returns
+    -------
+    lambda_i : float
+        Multiplier factor.
+    r_matrix : numpy.ndarray
+        Rotation matrix.
+    t_vector : numpy.ndarray
+        Translation (column) vector.
+```
+
