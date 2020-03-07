@@ -30,18 +30,13 @@ Where:
 - ``XYZ_s`` are the coordinates of the source points.
 - ``T`` is the translation (column) vector (`t_vector`).
 
+Per point weights can be used.  
+
+The solution can be forced to mirror and/or to fixed scale.  
+
 ----
 
 ## Notes
-
-Per point weights can be used.  
-
-The solution can be forced to mirror and/or to fixed scale.
-
-If a check fails, the function prints an error, and returns zeroes
-filled variables.  
-A program may evaluate the `lambda_i` value returned to raise an
-exception if it is equal to zero.
 
 Requires `numpy`.
 
@@ -84,8 +79,6 @@ Common usage.
 ...                  [6.0, 2.5, 3.5],
 ...                  [7.5, 5.5, 3.5]]
 >>> m, r, t = simil.process(source_points, target_points)
-Processing...
-Done.
 >>> m
 1.5000000000000016
 >>> r
@@ -119,8 +112,6 @@ To force a fixed scale of 1.25:
 ...                         target_points, 
 ...                         scale=False, 
 ...                         lambda_0=1.25)
-Processing...
-Done.
 >>> m
 1.25
 >>> print((m * r @ source_coords + t).T)
@@ -135,8 +126,6 @@ To force mirroring the source points:
 
 ```python
 >>> m, r, t = simil.process(source_points, target_points, lambda_0=-1)
-Processing...
-Done.
 >>> print((m * r @ source_coords + t).T)
 [[4.385 6.758 3.124]
  [5.329 4.987 3.951]
@@ -154,8 +143,6 @@ Per point weights can be passed as a list:
 ...                         alpha_0=alpha_0,
 ...                         scale=False,
 ...                         lambda_0=1)
-Processing...
-Done.
 >>> print((m * r @ source_coords + t).T)
 [[3.604 6.703 4.698]
  [5.604 6.703 2.698]
@@ -172,7 +159,7 @@ Done.
 >>> help(simil.process)
 Help on function process in module simil:
 
-process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1)
+process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1.0)
     Find similarity transformation parameters given a set of control points
 
     Parameters
@@ -195,7 +182,7 @@ process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1)
     scale : boolean, optional
         Allow to find a multiplier factor different from lambda_0.
         Default is True.
-    lambda_0 : , optional
+    lambda_0 : float, optional
         Multiplier factor to find the first solution. Default is 1.
         If `scale=True`, a recursion is implemented to find a better
         value. If it is negative, forces mirroring. Can't be zero.

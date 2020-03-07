@@ -33,12 +33,6 @@ The solution can be forced to mirror and/or to fixed scale.
 Notes
 -----
 
-If a check fail, the function prints an error, and return zeroes
-filled variables. 
-
-A program may evaluate the `lambda_i` value returned to raise an
-exception if it is equal to zero.
-
 Requires `numpy`.
 
 References
@@ -68,8 +62,6 @@ Common usage.
 ...                  [6.0, 2.5, 3.5],
 ...                  [7.5, 5.5, 3.5]]
 >>> m, r, t = simil.process(source_points, target_points)
-Processing...
-Done.
 >>> m
 1.5000000000000016
 >>> r
@@ -99,8 +91,6 @@ To force a fixed scale of 1.25:
 ...                         target_points, 
 ...                         scale=False, 
 ...                         lambda_0=1.25)
-Processing...
-Done.
 >>> m
 1.25
 >>> print((m * r @ source_coords + t).T)
@@ -113,8 +103,6 @@ Done.
 To force mirroring the source points: 
 
 >>> m, r, t = simil.process(source_points, target_points, lambda_0=-1)
-Processing...
-Done.
 >>> print((m * r @ source_coords + t).T)
 [[4.385 6.758 3.124]
  [5.329 4.987 3.951]
@@ -130,8 +118,6 @@ Per point weights can be passed as a list:
 ...                         alpha_0=alpha_0,
 ...                         scale=False,
 ...                         lambda_0=1)
-Processing...
-Done.
 >>> print((m * r @ source_coords + t).T)
 [[3.604 6.703 4.698]
  [5.604 6.703 2.698]
@@ -145,43 +131,6 @@ import numpy as np
 # =================
 # Private functions
 # =================
-
-def _get_coords(points):
-    coords = np.array(points, dtype=float, ndmin=2).T
-    if coords.shape[0] != 3:
-        if coords.shape[0] == 2:
-            coords = np.concatenate((coords, np.zeros((1, coords.shape[1]))))
-        else:
-            raise
-    return coords
-
-def _check_source_coords(source_coords, n):
-    if (n == 1 or (source_coords[None,0] == source_coords).all()):
-        raise
-    return
-
-def _check_target_coords(target_coords, n):
-    if target_coords.shape[1] != n:
-        raise
-    return
-
-def _check_alpha_0(alpha_0, n):
-    if alpha_0 is None:
-        alpha_0 = np.ones((1, n))
-    else:
-        alpha_0 = np.array(alpha_0, dtype=float, ndmin=2)
-        if alpha_0.shape != (1, n): 
-            raise
-    return alpha_0.flatten()
-
-def _check_lambda_0(lambda_0):
-    try:
-        lambda_0 = float(lambda_0)
-    except:
-        raise
-    if lambda_0 == 0:
-        raise
-    return lambda_0
 
 def _get_scalar(alpha_0, q_coords=None):
     if q_coords is None:
@@ -208,7 +157,9 @@ def _get_abc_matrices(alpha_0, m1, m2=None):
     if m2 is None:
         matrix = np.einsum('i,ijk->jk', alpha_0, m1)
     else:
-        matrix = np.einsum('i,ijk->jk', alpha_0, np.transpose(m1, (0,2,1)) @ m2)
+        matrix = np.einsum('i,ijk->jk',
+                           alpha_0,
+                           np.transpose(m1, (0,2,1)) @ m2)
     return matrix
 
 def _get_blc_matrix(b_matrix, lambda_i, c_matrix):
@@ -236,7 +187,7 @@ def _get_solution(am, bs, bm, cs, cm, scale, li, i):
     blc_matrix = _get_blc_matrix(bm, li, cm)
     d_matrix = _get_d_matrix(li, cs, am, blc_matrix)
     beta_1, r_quat = _get_r_quat(d_matrix)
-    if (scale is False or i == 5): # 5 is a security exit (i <= 2)
+    if scale is False:
         return blc_matrix, d_matrix, beta_1, r_quat, li, i
     else:
         lambda_next = _get_lambda_next(am, bs, bm, cs, cm, r_quat)
@@ -265,7 +216,11 @@ def _get_t_vector(r_quat, s_quat):
 # Process function
 # ================
     
-def process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1):
+def process(source_points,
+            target_points,
+            alpha_0=None,
+            scale=True,
+            lambda_0=1.0):
     """
     Find similarity transformation parameters given a set of control points
     
@@ -274,9 +229,9 @@ def process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1):
     source_points : array_like
         The function will try to cast it to a numpy array with shape:
         ``(n, 3)``, where ``n`` is the number of points.
-        Two points is the minimum requeriment. The solution will map
-        well all points that belong in the rect that passes trought
-        both control points.
+        Two points is the minimum requeriment (in that case, the solution
+        will map well all points that belong in the rect that passes 
+        through both control points).
     target_points : array_like
         The function will try to cast it to a numpy array with shape:
         ``(n, 3)``, where ``n`` is the number of points.
@@ -284,13 +239,13 @@ def process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1):
         as source points.
     alpha_0 : array_like, optional
         Per point weights.
-        The function will try to cast it to a numpy array with shape:
-        ``(1, n)``.
+        If provided, the function will try to cast to a numpy array with
+        shape: ``(n,)``.
     scale : boolean, optional
         Allow to find a multiplier factor different from lambda_0.
         Default is True.
-    lambda_0 : , optional
-        Multiplier factor to find the first solution. Default is 1.
+    lambda_0 : float, optional
+        Multiplier factor to find the first solution. Default is 1.0.
         If `scale=True`, a recursion is implemented to find a better
         value. If it is negative, forces mirroring. Can't be zero.
 
@@ -300,84 +255,82 @@ def process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1):
         Multiplier factor.
     r_matrix : numpy.ndarray
         Rotation matrix.
-    t_vector = numpy.ndarray
+    t_vector : numpy.ndarray
         Translation (column) vector.
     """
     
-    print('Processing...')
     
-    # false outputs to return if an exception is raised
-    
-    false_lambda_i = 0
-    false_r_matrix = np.array([[0, 0, 0],
-                               [0, 0, 0],
-                               [0, 0, 0]])
-    false_t_vector = np.array([[0], [0], [0]])
+    # declarations and checkups
 
-    # checks
-    
-    try:
-        source_coords = _get_coords(source_points)
-    except:
-        print('ERROR:\n' + 
-              f'source_points = {source_points}' +
-              '\n could not be broadcasted as a numerical array' +
-              '\n with shape = (n, 3).')
-        return false_lambda_i, false_r_matrix, false_t_vector
+    source_coords = np.array(source_points, dtype=float).T
 
+    if source_coords.ndim != 2:
+        err_str = ('source_points array must have dimension 2.')
+        raise ValueError(err_str)
+
+    if source_coords.shape[0] != 3:
+        err_str = ('There are not 3 coordinates in source points.')
+        raise ValueError(err_str)        
+    
     n = source_coords.shape[1]
 
-    try: 
-        _check_source_coords(source_coords, n)
-    except:
-        print('ERROR:\n' +
-              'there are not two distinct source points.')
-        return false_lambda_i, false_r_matrix, false_t_vector
-
-    try:
-        target_coords = _get_coords(target_points)
-    except:
-        print('ERROR:\n' + 
-              f'target_points = {target_points}' +
-              '\n could not be broadcasted as a numerical array' +
-              f'\n with shape = ({n}, 3).')
-        return false_lambda_i, false_r_matrix, false_t_vector
+    if (n == 1 or (source_coords[None,0] == source_coords).all()):
+        err_str = ('There are not two distinct source points.')
+        raise ValueError(err_str)
+        
+    target_coords = np.array(target_points, dtype=float).T
     
-    try:
-        _check_target_coords(target_coords, n)
-    except:
-        print('ERROR:\n' + 
-              f'(target_points) {target_coords.shape[1]} != {n} (source_points).')
-        return false_lambda_i, false_r_matrix, false_t_vector
-    
-    try:
-        alpha_0 = _check_alpha_0(alpha_0, n)
-    except:
-        print('ERROR:\n' +
-              f'alpha_0 = {alpha_0}' +
-              '\n could not be broadcasted as a numerical array' +
-              f'\n with shape (for this case) = (1, {n}).')
-        return false_lambda_i, false_r_matrix, false_t_vector
+    if target_coords.ndim != 2:
+        err_str = ('target_points array must have dimension 2.')
+        raise ValueError(err_str)
 
-    try:
-        lambda_0 = _check_lambda_0(lambda_0)
-    except:
-        print('ERROR:\n' + 
-              f'lambda_0 = {lambda_0}' +
-              '\n could not be broadcasted as a float != 0.')
-        return false_lambda_i, false_r_matrix, false_t_vector
+    if target_coords.shape[0] != 3:
+        err_str = ('There are not 3 coordinates in target points.')
+        raise ValueError(err_str)
+        
+    if target_coords.shape[1] != n:
+        err_str = ('There are not as many target points as source points.')
+        raise ValueError(err_str)
+
+    if alpha_0 is None:
+        alpha_0 = np.ones(n)
+    else:
+        alpha_0 = np.array(alpha_0, dtype=float)
+
+    if alpha_0.ndim != 1:
+        err_str = ('alpha_0 array must have dimension 1.')
+        raise ValueError(err_str)
+
+    if alpha_0.shape != (n,):
+        err_str = ('There are not as many alpha_0 coefficients as '
+                   'control points.')
+        raise ValueError(err_str)
+
+    lambda_0 = float(lambda_0)
+    
+    if lambda_0 == 0:
+        err_str = ('lambda_0 can\'t be zero.')
+        raise ValueError(err_str)
+
 
     # processes
     
     source_q_coords = np.concatenate((source_coords,np.zeros((1,n))))
+    
     target_q_coords = np.concatenate((target_coords,np.zeros((1,n))))
 
     b_scalar = _get_scalar(alpha_0, source_q_coords)
+    
     c_scalar = np.einsum('i->', alpha_0)
+    
     q0_w_matrix = _get_w_matrix(source_q_coords.T)
+    
     qt_q_matrix = _get_q_matrix(target_q_coords.T)
+    
     a_matrix = _get_abc_matrices(alpha_0, q0_w_matrix, qt_q_matrix)
+    
     b_matrix = _get_abc_matrices(alpha_0, qt_q_matrix)
+    
     c_matrix = _get_abc_matrices(alpha_0, q0_w_matrix)
 
     lambda_i, i = lambda_0 , 1
@@ -390,10 +343,11 @@ def process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1):
                                                                       scale, 
                                                                       lambda_i, 
                                                                       i)
-    r_matrix = _get_r_matrix(r_quat)
-    s_quat = _get_s_quat(c_scalar, blc_matrix, r_quat)
-    t_vector = np.array(_get_t_vector(r_quat, s_quat)).reshape(3,1)
     
-    print('Done.')
+    r_matrix = _get_r_matrix(r_quat)
+    
+    s_quat = _get_s_quat(c_scalar, blc_matrix, r_quat)
+    
+    t_vector = np.array(_get_t_vector(r_quat, s_quat)).reshape(3,1)
     
     return lambda_i, r_matrix, t_vector
