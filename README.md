@@ -5,7 +5,7 @@ Find similarity transformation parameters, given a set of 3-D control points, us
 ----
 ## Summary
 
-A partial implementation of the algorithm described by Zeng et al., 2018<sup>[1]</sup>.
+A partial implementation of the algorithm described by Zeng et al., 2018 <sup>[1]</sup>.
 
 Given a set of 3-D control points, the algorithm solves an optimization
 problem to find the parameters of the similarity transformation
