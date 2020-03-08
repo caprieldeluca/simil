@@ -2,17 +2,17 @@
 """
 Find similarity transformation parameters given a set of control points
 
-This script is a partial implementation of the algorithm described by
-Zeng et al. (2018)[1]_.
+A partial implementation of the algorithm described by Zeng et al.,
+2018[1]_.  
 
 Given a set of 3-D control points, the algorithm solves an optimization
 problem to find the parameters of the similarity transformation
 that minimizes the error of the solution, using the mathematical
-concepts of dual numbers and quaternions.
+concepts of dual numbers and quaternions.  
 
 Source and target control points coordinates are passed as arguments to
 the `process` function, which returns the values for M (multiplier
-factor), R (rotation matrix), and T (translation vector).
+factor), R (rotation matrix), and T (translation vector).  
 
 Once the parameters have been solved, transform coordinates with the
 following formula:
@@ -26,8 +26,8 @@ Where:
 - ``XYZ_s`` are the coordinates of the source points.
 - ``T`` is the translation vector (`t_vector`).
 
-Per point weights can be used.
-The solution can be forced to mirror and/or to fixed scale.
+Per point weights can be used.  
+The solution can be forced to mirror and/or to fixed scale.  
 
 
 Notes
