@@ -1,16 +1,15 @@
 # simil
 
-A Python script to find similarity transformation parameters, given a set of control points, using dual quaternions.
+Find similarity transformation parameters, given a set of 3-D control points, using dual quaternions.
 
 ----
 ## Summary
 
-This script is a partial implementation of the algorithm described by
-Zeng et al. (2018)[1].
+A partial implementation of the algorithm described by Zeng et al. (2018)[1].
 
 Given a set of 3-D control points, the algorithm solves an optimization
 problem to find the parameters of the similarity transformation
-that minimizes the error of the solution, using the mathematical
+that minimizes the error of the solution, applying the mathematical
 concepts of dual numbers and quaternions.
 
 Source and target control points coordinates are passed as arguments to
@@ -57,6 +56,12 @@ Earth, Planets and Space (2018) 70:26.
 [MIT License](https://github.com/gabriel-de-luca/simil/raw/master/LICENSE)
 
 Copyright (c) 2020 Gabriel De Luca
+
+----  
+
+## Installation
+
+Save the `simil.py` file in one directory of the Python interpreter (Module Search Path)[https://docs.python.org/3/tutorial/modules.html#the-module-search-path].
 
 ----
 
