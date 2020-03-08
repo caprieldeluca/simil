@@ -265,32 +265,32 @@ def process(source_points,
     source_coords = np.array(source_points, dtype=float).T
 
     if source_coords.ndim != 2:
-        err_str = ('source_points array must have dimension 2.')
-        raise ValueError(err_str)
-
+        err_msg = ('source_points array must have dimension = 2.')
+        raise ValueError(err_msg)
+        
     if source_coords.shape[0] != 3:
-        err_str = ('There are not 3 coordinates in source points.')
-        raise ValueError(err_str)        
+        err_msg = ('There are not three coordinates in source points.')
+        raise ValueError(err_msg)        
     
     n = source_coords.shape[1]
 
     if (n == 1 or (source_coords[None,0] == source_coords).all()):
-        err_str = ('There are not two distinct source points.')
-        raise ValueError(err_str)
+        err_msg = ('There are not two distinct source points.')
+        raise ValueError(err_msg)
         
     target_coords = np.array(target_points, dtype=float).T
     
     if target_coords.ndim != 2:
-        err_str = ('target_points array must have dimension 2.')
-        raise ValueError(err_str)
+        err_msg = ('target_points array must have dimension = 2.')
+        raise ValueError(err_msg)
 
     if target_coords.shape[0] != 3:
-        err_str = ('There are not 3 coordinates in target points.')
-        raise ValueError(err_str)
+        err_msg = ('There are not three coordinates in target points.')
+        raise ValueError(err_msg)
         
     if target_coords.shape[1] != n:
-        err_str = ('There are not as many target points as source points.')
-        raise ValueError(err_str)
+        err_msg = ('There are not as many target points as source points.')
+        raise ValueError(err_msg)
 
     if alpha_0 is None:
         alpha_0 = np.ones(n)
@@ -298,19 +298,19 @@ def process(source_points,
         alpha_0 = np.array(alpha_0, dtype=float)
 
     if alpha_0.ndim != 1:
-        err_str = ('alpha_0 array must have dimension 1.')
-        raise ValueError(err_str)
+        err_msg = ('alpha_0 array must have dimension = 1.')
+        raise ValueError(err_msg)
 
     if alpha_0.shape != (n,):
-        err_str = ('There are not as many alpha_0 coefficients as '
+        err_msg = ('There are not as many alpha_0 coefficients as '
                    'control points.')
-        raise ValueError(err_str)
+        raise ValueError(err_msg)
 
     lambda_0 = float(lambda_0)
     
     if lambda_0 == 0:
-        err_str = ('lambda_0 can\'t be zero.')
-        raise ValueError(err_str)
+        err_msg = ('lambda_0 cannot be zero.')
+        raise ValueError(err_msg)
 
 
     # processes
