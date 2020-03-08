@@ -61,7 +61,7 @@ Copyright (c) 2020 Gabriel De Luca
 
 ## Installation
 
-Save the `simil.py` file in one directory of the Python interpreter [Module Search Path](https://docs.python.org/3/tutorial/modules.html#the-module-search-path).
+Save the [simil.py](https://raw.githubusercontent.com/gabriel-de-luca/simil/master/simil.py) file in one directory of the Python interpreter [Module Search Path](https://docs.python.org/3/tutorial/modules.html#the-module-search-path).
 
 ----
 
