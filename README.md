@@ -24,6 +24,7 @@ Where:
 - ``T`` is the translation (column) vector (`t_vector`).
 
 Per point weights can be used.
+
 The solution can be forced to mirror and/or to fixed scale.
 
 ----
