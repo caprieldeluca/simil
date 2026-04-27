@@ -50,7 +50,7 @@ Examples
 Common usage.
 
 >>> import numpy as np
->>> # Adjust print precision
+>>> # Adjust print options
 >>> np.set_printoptions(precision=3, suppress=True)
 >>> import simil
 >>> source_points = [[0, 0, 0],
