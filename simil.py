@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Find similarity (rigid body) body transformation parameters,
+Find similarity (rigid body) transformation parameters,
 given two set of 3-D control points, using dual quaternions.
 
 A partial implementation of the algorithm described by Zeng et al.,

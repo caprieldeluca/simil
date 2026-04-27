@@ -1,6 +1,6 @@
 # simil
 
-Find similarity (rigid body) body transformation parameters, given two set of 3-D control points, using dual quaternions.
+Find similarity (rigid body) transformation parameters, given two set of 3-D control points, using dual quaternions.
 
 ----
 ## Summary
