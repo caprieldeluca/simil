@@ -1,27 +1,21 @@
 # simil
 
-Find similarity transformation parameters, given a set of 3-D control points, using dual quaternions.
+Find similarity (rigid body) body transformation parameters, given two set of 3-D control points, using dual quaternions.
 
 ----
 ## Summary
 
 A partial implementation of the algorithm described by Zeng et al., 2018 <sup>[1]</sup>.
 
-Given a set of 3-D control points, the algorithm solves an optimization
-problem to find the parameters of the similarity transformation
-that minimizes the error of the solution, applying the mathematical
-concepts of dual numbers and quaternions.
+Given two sets of 3-D control points, the algorithm solves an optimization problem to find the parameters of the rigid body transformation between them, that minimizes the sum of squared residuals, solution's (squared) residuals, using the mathematical concepts of dual numbers and quaternions.
 
-Source and target control points coordinates are passed as arguments to
-the `process` function, which returns the values for M (multiplier
-factor), R (rotation matrix), and T (translation vector).
+Source and target coordinates, as two lists of control points, can be passed to the `find` function, which returns the values for M (multiplier factor), R (rotation matrix), and T (translation vector).
 
-Once the parameters have been solved, transform coordinates with the
-following formula:
-    
+Once the parameters have been solved, transform coordinates with the following formula:
+
 ```
 XYZ_t = M * R @ XYZ_s + T
-```   
+```
 Where:
 - ``XYZ_t`` are the coordinates of the target points.
 - ``M`` is the multiplier factor (`lambda_i`).
@@ -29,15 +23,14 @@ Where:
 - ``XYZ_s`` are the coordinates of the source points.
 - ``T`` is the translation (column) vector (`t_vector`).
 
-Per point weights can be used.  
-
-The solution can be forced to mirror and/or to fixed scale.  
+Per point weights can be used.
+The solution can be forced to mirror and/or to fixed scale.
 
 ----
 
 ## Notes
 
-Requires `numpy`.
+Requires just `numpy`.
 
 ----
 
@@ -49,7 +42,7 @@ A dual quaternion algorithm of the Helmert transformation problem.
 Earth, Planets and Space (2018) 70:26.
 [https://doi.org/10.1186/s40623-018-0792-x](https://doi.org/10.1186/s40623-018-0792-x)
 
-----  
+----
 
 ## License
 
@@ -57,11 +50,11 @@ Earth, Planets and Space (2018) 70:26.
 
 Copyright (c) 2020 Gabriel De Luca
 
-----  
+----
 
 ## Installation
 
-Save the [simil.py](https://raw.githubusercontent.com/gabriel-de-luca/simil/master/simil.py) file in one directory of the Python interpreter [Module Search Path](https://docs.python.org/3/tutorial/modules.html#the-module-search-path).
+Save the [simil.py](https://raw.githubusercontent.com/caprieldeluca/simil/master/simil.py) file in one directory of the Python interpreter [Module Search Path](https://docs.python.org/3/tutorial/modules.html#the-module-search-path).
 
 ----
 
@@ -71,6 +64,7 @@ Common usage.
 
 ```python
 >>> import numpy as np
+>>> # Adjust print precision
 >>> np.set_printoptions(precision=3, suppress=True)
 >>> import simil
 >>> source_points = [[0, 0, 0],
@@ -83,7 +77,7 @@ Common usage.
 ...                  [4.5, 4.0, 0.5],
 ...                  [6.0, 2.5, 3.5],
 ...                  [7.5, 5.5, 3.5]]
->>> m, r, t = simil.process(source_points, target_points)
+>>> m, r, t = simil.find(source_points, target_points)
 >>> m
 1.5000000000000016
 >>> r
@@ -96,8 +90,7 @@ array([[3.],
        [5.]])
 ```
 
-To transform, we need coordinates (instead of points) in the rows,
-so transpose:
+**To transform using this formula, we need coordinates (instead of points) in the rows**, so transpose:
 
 ```python
 >>> source_coords = np.array(source_points).T
@@ -113,9 +106,9 @@ so transpose:
 To force a fixed scale of 1.25:
 
 ```python
->>> m, r, t = simil.process(source_points,
-...                         target_points, 
-...                         scale=False, 
+>>> m, r, t = simil.find(source_points,
+...                         target_points,
+...                         scale=False,
 ...                         lambda_0=1.25)
 >>> m
 1.25
@@ -127,10 +120,10 @@ To force a fixed scale of 1.25:
  [7.15 5.45 3.4 ]]
 ```
 
-To force mirroring the source points: 
+To force mirroring the source points:
 
 ```python
->>> m, r, t = simil.process(source_points, target_points, lambda_0=-1)
+>>> m, r, t = simil.find(source_points, target_points, lambda_0=-1)
 >>> print((m * r @ source_coords + t).T)
 [[4.385 6.758 3.124]
  [5.329 4.987 3.951]
@@ -143,11 +136,12 @@ Per point weights can be passed as a list:
 
 ```python
 >>> alpha_0 = [100, 20, 2, 20, 50]
->>> m, r, t = simil.process(source_points,
+>>> m, r, t = simil.find(source_points,
 ...                         target_points,
 ...                         alpha_0=alpha_0,
 ...                         scale=False,
 ...                         lambda_0=1)
+>>> # Print as points, so transpose.
 >>> print((m * r @ source_coords + t).T)
 [[3.604 6.703 4.698]
  [5.604 6.703 2.698]
@@ -156,16 +150,16 @@ Per point weights can be passed as a list:
  [6.604 5.703 3.698]]
 ```
 
-----  
+----
 
-## Process function help
+## Find function help
 
 ```
->>> help(simil.process)
-Help on function process in module simil:
+>>> help(simil.find)
+Help on function find in module simil:
 
-process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1.0)
-    Find similarity transformation parameters given a set of control points
+find(source_points, target_points, alpha_0=None, scale=True, lambda_0=1.0)
+    Find similarity (rigid body) transformation parameters given two set of 3-D control points.
 
     Parameters
     ----------
@@ -173,7 +167,7 @@ process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1.0)
         The function will try to cast it to a numpy array with shape:
         ``(n, 3)``, where ``n`` is the number of points.
         Two points is the minimum requeriment (in that case, the solution
-        will map well all points that belong in the rect that passes
+        will map all points that belong in the rect that passes
         through both control points).
     target_points : array_like
         The function will try to cast it to a numpy array with shape:
@@ -200,5 +194,8 @@ process(source_points, target_points, alpha_0=None, scale=True, lambda_0=1.0)
         Rotation matrix.
     t_vector : numpy.ndarray
         Translation (column) vector.
-```
 
+    Raises
+    ------
+    ValueError if some checkup fails.
+```

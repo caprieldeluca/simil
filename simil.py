@@ -1,24 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-Find similarity transformation parameters given a set of control points
+Find similarity (rigid body) body transformation parameters,
+given two set of 3-D control points, using dual quaternions.
 
 A partial implementation of the algorithm described by Zeng et al.,
-2018[1]_.  
+2018[1]_.
 
-Given a set of 3-D control points, the algorithm solves an optimization
-problem to find the parameters of the similarity transformation
-that minimizes the error of the solution, using the mathematical
-concepts of dual numbers and quaternions.  
+Given two sets of 3-D control points, the algorithm solves an optimization
+problem to find the parameters of the rigid body transformation between them,
+that minimizes the sum of squared residuals, solution's (squared) residuals,
+using the mathematical concepts of dual numbers and quaternions.
 
-Source and target control points coordinates are passed as arguments to
-the `process` function, which returns the values for M (multiplier
-factor), R (rotation matrix), and T (translation vector).  
+Source and target coordinates, as two lists of control points, can be passed to
+the `find` function, which returns the values for M (multiplier factor),
+R (rotation matrix), and T (translation vector).
 
 Once the parameters have been solved, transform coordinates with the
 following formula:
-    
+
     ``XYZ_t = M * R * XYZ_s + T``
-    
+
 Where:
 - ``XYZ_t`` are the coordinates of the target points.
 - ``M`` is the multiplier factor (`lambda_i`).
@@ -26,14 +27,14 @@ Where:
 - ``XYZ_s`` are the coordinates of the source points.
 - ``T`` is the translation vector (`t_vector`).
 
-Per point weights can be used.  
-The solution can be forced to mirror and/or to fixed scale.  
+Per point weights can be used.
+The solution can be forced to mirror and/or to fixed scale.
 
 
 Notes
 -----
 
-Requires `numpy`.
+Requires just `numpy`.
 
 References
 ----------
@@ -49,6 +50,7 @@ Examples
 Common usage.
 
 >>> import numpy as np
+>>> # Adjust print precision
 >>> np.set_printoptions(precision=3, suppress=True)
 >>> import simil
 >>> source_points = [[0, 0, 0],
@@ -61,7 +63,7 @@ Common usage.
 ...                  [4.5, 4.0, 0.5],
 ...                  [6.0, 2.5, 3.5],
 ...                  [7.5, 5.5, 3.5]]
->>> m, r, t = simil.process(source_points, target_points)
+>>> m, r, t = simil.find(source_points, target_points)
 >>> m
 1.5000000000000016
 >>> r
@@ -73,9 +75,9 @@ array([[3.],
        [7.],
        [5.]])
 
-To transform, we need coordinates (instead of points) in the rows,
+**To transform using this formula, we need coordinates (instead of points) in the rows**,
 so transpose:
-    
+
 >>> source_coords = np.array(source_points).T
 >>> target_coords = m * r @ source_coords + t
 >>> print(target_coords.T)
@@ -87,9 +89,9 @@ so transpose:
 
 To force a fixed scale of 1.25:
 
->>> m, r, t = simil.process(source_points,
-...                         target_points, 
-...                         scale=False, 
+>>> m, r, t = simil.find(source_points,
+...                         target_points,
+...                         scale=False,
 ...                         lambda_0=1.25)
 >>> m
 1.25
@@ -100,9 +102,9 @@ To force a fixed scale of 1.25:
  [5.9  2.95 3.4 ]
  [7.15 5.45 3.4 ]]
 
-To force mirroring the source points: 
+To force mirroring the source points:
 
->>> m, r, t = simil.process(source_points, target_points, lambda_0=-1)
+>>> m, r, t = simil.find(source_points, target_points, lambda_0=-1)
 >>> print((m * r @ source_coords + t).T)
 [[4.385 6.758 3.124]
  [5.329 4.987 3.951]
@@ -113,11 +115,13 @@ To force mirroring the source points:
 Per point weights can be passed as a list:
 
 >>> alpha_0 = [100, 20, 2, 20, 50]
->>> m, r, t = simil.process(source_points,
+>>> m, r, t = simil.find(source_points,
 ...                         target_points,
 ...                         alpha_0=alpha_0,
 ...                         scale=False,
 ...                         lambda_0=1)
+
+>>> # Print as points, so transpose.
 >>> print((m * r @ source_coords + t).T)
 [[3.604 6.703 4.698]
  [5.604 6.703 2.698]
@@ -210,27 +214,27 @@ def _get_s_quat(c_scalar, blcm, r_quat):
 def _get_t_vector(r_quat, s_quat):
     r_w_matrix = _get_w_matrix([r_quat])[0]
     t_vector = [2 * (r_w_matrix.T @ s_quat)[:3]]
-    return t_vector 
-   
+    return t_vector
+
 # ================
-# Process function
+# Find function
 # ================
-    
-def process(source_points,
+
+def find(source_points,
             target_points,
             alpha_0=None,
             scale=True,
             lambda_0=1.0):
     """
-    Find similarity transformation parameters given a set of control points
-    
+    Find similarity (rigid body) transformation parameters given two set of 3-D control points.
+
     Parameters
     ----------
     source_points : array_like
         The function will try to cast it to a numpy array with shape:
         ``(n, 3)``, where ``n`` is the number of points.
         Two points is the minimum requeriment (in that case, the solution
-        will map well all points that belong in the rect that passes 
+        will map all points that belong in the rect that passes
         through both control points).
     target_points : array_like
         The function will try to cast it to a numpy array with shape:
@@ -257,9 +261,13 @@ def process(source_points,
         Rotation matrix.
     t_vector : numpy.ndarray
         Translation (column) vector.
+
+    Raises
+    ------
+    ValueError if some checkup fails.
     """
-    
-    
+
+
     # declarations and checkups
 
     source_coords = np.array(source_points, dtype=float).T
@@ -267,19 +275,19 @@ def process(source_points,
     if source_coords.ndim != 2:
         err_msg = ('source_points array must have dimension = 2.')
         raise ValueError(err_msg)
-        
+
     if source_coords.shape[0] != 3:
         err_msg = ('There are not three coordinates in source points.')
-        raise ValueError(err_msg)        
-    
+        raise ValueError(err_msg)
+
     n = source_coords.shape[1]
 
     if (n == 1 or (source_coords[None,0] == source_coords).all()):
         err_msg = ('There are not two distinct source points.')
         raise ValueError(err_msg)
-        
+
     target_coords = np.array(target_points, dtype=float).T
-    
+
     if target_coords.ndim != 2:
         err_msg = ('target_points array must have dimension = 2.')
         raise ValueError(err_msg)
@@ -287,7 +295,7 @@ def process(source_points,
     if target_coords.shape[0] != 3:
         err_msg = ('There are not three coordinates in target points.')
         raise ValueError(err_msg)
-        
+
     if target_coords.shape[1] != n:
         err_msg = ('There are not as many target points as source points.')
         raise ValueError(err_msg)
@@ -307,47 +315,47 @@ def process(source_points,
         raise ValueError(err_msg)
 
     lambda_0 = float(lambda_0)
-    
+
     if lambda_0 == 0:
         err_msg = ('lambda_0 cannot be zero.')
         raise ValueError(err_msg)
 
 
     # processes
-    
+
     source_q_coords = np.concatenate((source_coords,np.zeros((1,n))))
-    
+
     target_q_coords = np.concatenate((target_coords,np.zeros((1,n))))
 
     b_scalar = _get_scalar(alpha_0, source_q_coords)
-    
+
     c_scalar = np.einsum('i->', alpha_0)
-    
+
     q0_w_matrix = _get_w_matrix(source_q_coords.T)
-    
+
     qt_q_matrix = _get_q_matrix(target_q_coords.T)
-    
+
     a_matrix = _get_abc_matrices(alpha_0, q0_w_matrix, qt_q_matrix)
-    
+
     b_matrix = _get_abc_matrices(alpha_0, qt_q_matrix)
-    
+
     c_matrix = _get_abc_matrices(alpha_0, q0_w_matrix)
 
     lambda_i, i = lambda_0 , 1
 
     blc_matrix, d_matrix, beta_1, r_quat, lambda_i, i = _get_solution(a_matrix,
-                                                                      b_scalar, 
-                                                                      b_matrix, 
-                                                                      c_scalar, 
-                                                                      c_matrix, 
-                                                                      scale, 
-                                                                      lambda_i, 
+                                                                      b_scalar,
+                                                                      b_matrix,
+                                                                      c_scalar,
+                                                                      c_matrix,
+                                                                      scale,
+                                                                      lambda_i,
                                                                       i)
-    
+
     r_matrix = _get_r_matrix(r_quat)
-    
+
     s_quat = _get_s_quat(c_scalar, blc_matrix, r_quat)
-    
+
     t_vector = np.array(_get_t_vector(r_quat, s_quat)).reshape(3,1)
-    
+
     return lambda_i, r_matrix, t_vector
